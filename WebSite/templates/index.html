@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🧠 Kidney Cyst Detection – Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        .bg-curves {
+            background-image:
+                radial-gradient(circle at 20% 50%, rgba(14, 165, 233, 0.15), transparent 40%),
+                radial-gradient(circle at 80% 50%, rgba(14, 165, 233, 0.15), transparent 40%);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 bg-curves text-white flex flex-col items-center justify-center min-h-screen p-4 space-y-8">
+    <div class="flex items-center justify-center space-x-4 mb-4 animate-fade-in-down">
+
+        <svg class="w-12 h-12 text-sky-400 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M8.5,4 C5,4 2,7 2,11 C2,16.5 7,21 12,21 C17.5,21 22,15 22,9.5 C22,5 18.5,3 15.5,3 C13.5,3 12,4.5 11,5.5 C10,4.5 9.5,4 8.5,4 Z M11.5,8 C11.5,8 13,6 15,6 C16.5,6 18,7.5 18,10 C18,13 15,15 12,15 C11,15 10,14 10,12 C10,10 11.5,8 11.5,8 Z" />
+        </svg>
+
+        <h1
+            class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-blue-100 to-white drop-shadow-[0_0_10px_rgba(14,165,233,0.5)] text-center tracking-tight font-sans">
+            Kidney Cyst Detection
+        </h1>
+    </div>
+
+    <div id="card" class="relative w-full max-w-lg rounded-3xl overflow-hidden p-8 border border-gray-800 shadow-2xl">
+
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <div class="relative z-10 flex flex-col items-center space-y-6">
+            <h1 class="text-2xl font-bold text-gray-200">🔍 Upload Kidney Image to Predict</h1>
+
+            <input id="file-input" type="file" accept="image/*" class="w-full text-sm text-gray-300
+                    file:py-2 file:px-4 file:bg-sky-500 file:text-white
+                    file:rounded-lg hover:file:bg-sky-600 transition cursor-pointer" />
+
+            <div id="preview" class="w-full h-48 bg-gray-800/50 border-2 border-dashed border-sky-600/50 rounded-lg
+                    flex items-center justify-center text-gray-500">
+                <span>Select an image to preview</span>
+            </div>
+
+            <button id="predict-btn" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold
+                    transition shadow-lg shadow-sky-500/20 transform hover:scale-[1.02]">
+                Predict Result
+            </button>
+
+            <div id="skeleton" class="w-full mt-4 space-y-4 hidden">
+                <div class="h-6 bg-gray-700 rounded animate-pulse"></div>
+                <div class="h-32 bg-gray-700 rounded animate-pulse"></div>
+            </div>
+
+            <div id="result-container" class="w-full flex items-center justify-center space-x-2 hidden">
+                <div id="result" class="px-4 py-2 rounded-lg font-medium"></div>
+                <div class="relative group">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6 text-gray-400 hover:text-gray-200 cursor-pointer" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+                    </svg>
+                    <div id="tooltip" class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 w-48
+                        bg-gray-800 text-sm text-gray-200 p-2 rounded-lg opacity-0
+                        group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+                    </div>
+                </div>
+            </div>
+
+            <div id="chart-container" class="w-full hidden space-y-4 mt-4">
+                <div>
+                    <div class="flex justify-between mb-1 text-sm text-gray-300">
+                        <span>Cyst</span><span id="cyst-rate-text"></span>
+                    </div>
+                    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden">
+                        <div id="cyst-bar" class="h-3 bg-red-500 transition-all duration-1000" style="width:0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1 text-sm text-gray-300">
+                        <span>No-Cyst</span><span id="noncyst-rate-text"></span>
+                    </div>
+                    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden">
+                        <div id="noncyst-bar" class="h-3 bg-sky-500 transition-all duration-1000" style="width:0%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="actions" class="w-full flex justify-between hidden pt-2">
+                <button id="download-btn"
+                    class="bg-gray-700 hover:bg-gray-600 text-white text-sm px-4 py-2 rounded-lg transition border border-gray-600">
+                    Download
+                </button>
+                <button id="share-btn"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm px-4 py-2 rounded-lg transition shadow-lg shadow-indigo-500/20">
+                    Share
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById("file-input");
+        const preview = document.getElementById("preview");
+        const predictBtn = document.getElementById("predict-btn");
+        const skeleton = document.getElementById("skeleton");
+        const resultCtr = document.getElementById("result-container");
+        const resultBox = document.getElementById("result");
+        const tooltip = document.getElementById("tooltip");
+        const chartContainer = document.getElementById("chart-container");
+        const cystBar = document.getElementById("cyst-bar");
+        const noncystBar = document.getElementById("noncyst-bar");
+        const cystRateText = document.getElementById("cyst-rate-text");
+        const noncystRateText = document.getElementById("noncyst-rate-text");
+        const actions = document.getElementById("actions");
+        const downloadBtn = document.getElementById("download-btn");
+        const shareBtn = document.getElementById("share-btn");
+
+        function hideAll() {
+            resultCtr.classList.add("hidden");
+            chartContainer.classList.add("hidden");
+            actions.classList.add("hidden");
+        }
+
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" class="object-contain h-full w-full rounded-lg"/>`;
+            hideAll();
+        });
+
+        predictBtn.addEventListener("click", async () => {
+            if (!fileInput.files.length) return alert("Please select an image.");
+            skeleton.classList.remove("hidden");
+            hideAll();
+
+            const fd = new FormData();
+            fd.append("image", fileInput.files[0]);
+
+            try {
+                const res = await fetch("/predict", { method: "POST", body: fd });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || "Prediction failed");
+
+                const isCyst = json.prediction === "Cyst";
+                const confidence = json.confidence;
+
+                let cystPct, noncystPct;
+
+                if (isCyst) {
+                    cystPct = Math.round(confidence * 100);
+                    noncystPct = 100 - cystPct;
+                } else {
+                    noncystPct = Math.round(confidence * 100);
+                    cystPct = 100 - noncystPct;
+                }
+
+                resultBox.textContent = `${json.prediction} (${isCyst ? cystPct : noncystPct}%)`;
+
+                // Blue theme for result box
+                resultBox.className = `px-4 py-2 rounded-lg font-medium ${isCyst ? "bg-red-500/20 text-red-200 border border-red-500/50" : "bg-sky-500/20 text-sky-200 border border-sky-500/50"
+                    }`;
+                resultCtr.classList.remove("hidden");
+
+                tooltip.textContent = `Model is ${isCyst ? cystPct : noncystPct}% confident this is ${json.prediction}`;
+
+                // Small delay to make the bars animate
+                setTimeout(() => {
+                    cystBar.style.width = `${cystPct}%`;
+                    noncystBar.style.width = `${noncystPct}%`;
+                }, 100);
+
+                cystRateText.textContent = `${cystPct}%`;
+                noncystRateText.textContent = `${noncystPct}%`;
+                chartContainer.classList.remove("hidden");
+                actions.classList.remove("hidden");
+
+            } catch (err) {
+                resultBox.textContent = err.message;
+                resultBox.className = "px-4 py-2 rounded-lg bg-red-900/50 text-red-200 font-medium border border-red-700";
+                resultCtr.classList.remove("hidden");
+            } finally {
+                skeleton.classList.add("hidden");
+            }
+        });
+
+        downloadBtn.addEventListener("click", () => {
+            const card = document.getElementById("card");
+            const scale = window.devicePixelRatio * 2;
+            html2canvas(card, {
+                scale: scale,
+                useCORS: true,
+                backgroundColor: null
+            }).then(canvas => {
+                const a = document.createElement("a");
+                a.href = canvas.toDataURL("image/png");
+                a.download = "prediction_highres.png";
+                a.click();
+            });
+        });
+
+        shareBtn.addEventListener("click", async () => {
+            const text = resultBox.textContent;
+            if (navigator.share) {
+                navigator.share({ title: "Kidney Cyst Prediction", text });
+            } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(text);
+                alert("Result copied to clipboard!");
+            } else {
+                alert("Share not supported.");
+            }
+        });
+    </script>
+</body>
+
+</html>
